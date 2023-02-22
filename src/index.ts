@@ -1,11 +1,10 @@
 import { SimpleKeyring } from "@unisat/bitcoin-simple-keyring";
 import * as bitcoin from "bitcoinjs-lib";
-import ECPairFactory, { ECPairInterface } from "ecpair";
+import { ECPairInterface } from "ecpair";
 import * as ecc from "tiny-secp256k1";
 import bitcore from "bitcore-lib";
 import Mnemonic from "bitcore-mnemonic";
 bitcoin.initEccLib(ecc);
-const ECPair = ECPairFactory(ecc);
 const hdPathString = "m/44'/0'/0'/0";
 const type = "HD Key Tree";
 
@@ -33,7 +32,7 @@ export class HdKeyring extends SimpleKeyring {
   perPage = 5;
 
   /* PUBLIC METHODS */
-  constructor(opts: any) {
+  constructor(opts?: DeserializeOption) {
     super(null);
     this.deserialize(opts);
   }
@@ -46,7 +45,12 @@ export class HdKeyring extends SimpleKeyring {
     };
   }
 
-  async deserialize(_opts: any = {}) {
+  async deserialize(_opts: DeserializeOption = {}) {
+    if (this.root) {
+      throw new Error(
+        "Btc-Hd-Keyring: Secret recovery phrase already provided"
+      );
+    }
     let opts = _opts as DeserializeOption;
     this.wallets = [];
     this.mnemonic = null;
@@ -63,6 +67,12 @@ export class HdKeyring extends SimpleKeyring {
   }
 
   initFromMnemonic(mnemonic: string) {
+    if (this.root) {
+      throw new Error(
+        "Btc-Hd-Keyring: Secret recovery phrase already provided"
+      );
+    }
+
     this.mnemonic = mnemonic;
     this._index2wallet = {};
 
