@@ -2,9 +2,11 @@ import { expect } from "chai";
 import { HdKeyring } from "../src";
 const sampleMnemonic =
   "finish oppose decorate face calm tragic certain desk hour urge dinosaur mango";
-const firstAcct =
+const firstPrivateKey =
+  "69f477943dd1591f0261cabade0839e2ffc0c13d8fa1ce0d69f6c6c251163b34";
+const firstAccount =
   "025d7c14ab260a6932bc5484a0d9791f5cce66b0c6e1e4d7aee1e6bd294459e7d9";
-const secondAcct =
+const secondAccount =
   "0306cd1266c7dfc5522d1f170fa45cca29a7071a5dad848204b676cbd398aa7d30";
 describe("bitcoin-hd-keyring", () => {
   describe("constructor", () => {
@@ -15,8 +17,11 @@ describe("bitcoin-hd-keyring", () => {
       });
 
       const accounts = await keyring.getAccounts();
-      expect(accounts[0]).eq(firstAcct);
-      expect(accounts[1]).eq(secondAcct);
+      expect(accounts[0]).eq(firstAccount);
+      expect(accounts[1]).eq(secondAccount);
+
+      const privateKey = await keyring.exportAccount(accounts[0]);
+      expect(privateKey).eq(firstPrivateKey);
     });
   });
 

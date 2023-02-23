@@ -1,10 +1,12 @@
 import { SimpleKeyring } from "@unisat/bitcoin-simple-keyring";
 import * as bitcoin from "bitcoinjs-lib";
-import { ECPairInterface } from "ecpair";
+import ECPairFactory, { ECPairInterface } from "ecpair";
 import * as ecc from "tiny-secp256k1";
 import bitcore from "bitcore-lib";
 import Mnemonic from "bitcore-mnemonic";
 bitcoin.initEccLib(ecc);
+const ECPair = ECPairFactory(ecc);
+
 const hdPathString = "m/44'/0'/0'/0";
 const type = "HD Key Tree";
 
@@ -194,13 +196,9 @@ export class HdKeyring extends SimpleKeyring {
   private _addressFromIndex(i: number): [string, ECPairInterface] {
     if (!this._index2wallet[i]) {
       const child = this.root!.deriveChild(i);
-      const privateKey = child.privateKey;
-      const address = privateKey
-        .toAddress(
-          this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
-        )
-        .toString();
-      this._index2wallet[i] = [address, privateKey];
+      const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
+      const address = ecpair.publicKey.toString();
+      this._index2wallet[i] = [address, ecpair];
     }
 
     return this._index2wallet[i];
