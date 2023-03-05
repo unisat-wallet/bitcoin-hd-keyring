@@ -14,6 +14,7 @@ interface DeserializeOption {
   hdPath?: string;
   mnemonic?: string;
   activeIndexes?: number[];
+  passphrase?: string;
 }
 
 export class HdKeyring extends SimpleKeyring {
@@ -21,7 +22,7 @@ export class HdKeyring extends SimpleKeyring {
 
   type = type;
   mnemonic: string = null;
-  phrase: string;
+  passphrase: string;
   network: bitcoin.Network = bitcoin.networks.bitcoin;
 
   hdPath = hdPathString;
@@ -44,6 +45,7 @@ export class HdKeyring extends SimpleKeyring {
       mnemonic: this.mnemonic,
       activeIndexes: this.activeIndexes,
       hdPath: this.hdPath,
+      passphrase: this.passphrase,
     };
   }
 
@@ -58,6 +60,10 @@ export class HdKeyring extends SimpleKeyring {
     this.mnemonic = null;
     this.root = null;
     this.hdPath = opts.hdPath || hdPathString;
+
+    if (opts.passphrase) {
+      this.passphrase = opts.passphrase;
+    }
 
     if (opts.mnemonic) {
       this.initFromMnemonic(opts.mnemonic);
@@ -81,7 +87,7 @@ export class HdKeyring extends SimpleKeyring {
     this.hdWallet = new Mnemonic(mnemonic);
     this.root = this.hdWallet
       .toHDPrivateKey(
-        this.phrase,
+        this.passphrase,
         this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
       )
       .deriveChild(this.hdPath);
