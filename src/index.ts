@@ -93,6 +93,36 @@ export class HdKeyring extends SimpleKeyring {
       .deriveChild(this.hdPath);
   }
 
+  changeHdPath(hdPath: string) {
+    this.hdPath = hdPath;
+
+    this.root = this.hdWallet
+      .toHDPrivateKey(
+        this.passphrase,
+        this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
+      )
+      .deriveChild(this.hdPath);
+
+    const indexes = this.activeIndexes;
+    this._index2wallet = {};
+    this.activeIndexes = [];
+    this.wallets = [];
+    this.activeAccounts(indexes);
+  }
+
+  getAccountByHdPath(hdPath: string, index: number) {
+    const root = this.hdWallet
+      .toHDPrivateKey(
+        this.passphrase,
+        this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
+      )
+      .deriveChild(hdPath);
+    const child = root!.deriveChild(index);
+    const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
+    const address = ecpair.publicKey.toString("hex");
+    return address;
+  }
+
   addAccounts(numberOfAccounts = 1) {
     if (!this.root) {
       this.initFromMnemonic(new Mnemonic().toString());
@@ -203,7 +233,7 @@ export class HdKeyring extends SimpleKeyring {
     if (!this._index2wallet[i]) {
       const child = this.root!.deriveChild(i);
       const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
-      const address = ecpair.publicKey.toString();
+      const address = ecpair.publicKey.toString("hex");
       this._index2wallet[i] = [address, ecpair];
     }
 

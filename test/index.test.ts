@@ -64,4 +64,62 @@ describe("bitcoin-hd-keyring", () => {
       expect(type).eq(correct);
     });
   });
+
+  describe("#Change hdPath", () => {
+    it("pass m/44", async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/44'/0'/0'/0",
+      });
+
+      const accounts_m44 = await keyring.getAccounts();
+      expect(accounts_m44).deep.equal([
+        "025d7c14ab260a6932bc5484a0d9791f5cce66b0c6e1e4d7aee1e6bd294459e7d9",
+        "0306cd1266c7dfc5522d1f170fa45cca29a7071a5dad848204b676cbd398aa7d30",
+      ]);
+    });
+
+    it("pass m/84", async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/84'/0'/0'/0",
+      });
+
+      const accounts_m84 = await keyring.getAccounts();
+      expect(accounts_m84).deep.equal([
+        "02d16db9d525d8623e80c04e33c4463450285791124381bc545bb85e5e8925a776",
+        "023f0b3115a6c5a51ec62d8cbe6e834e79fe4bf22555e095a163e0e451a6fdc4d5",
+      ]);
+    });
+
+    it("change m/44 to m/84", async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/44'/0'/0'/0",
+      });
+
+      keyring.changeHdPath("m/84'/0'/0'/0");
+      const accounts_m84 = await keyring.getAccounts();
+      expect(accounts_m84).deep.equal([
+        "02d16db9d525d8623e80c04e33c4463450285791124381bc545bb85e5e8925a776",
+        "023f0b3115a6c5a51ec62d8cbe6e834e79fe4bf22555e095a163e0e451a6fdc4d5",
+      ]);
+    });
+
+    it("getAccountByHdPath", async () => {
+      const keyring = new HdKeyring({
+        mnemonic: sampleMnemonic,
+        activeIndexes: [0, 1],
+        hdPath: "m/44'/0'/0'/0",
+      });
+
+      const account = keyring.getAccountByHdPath("m/84'/0'/0'/0", 1);
+      expect(account).eq(
+        "023f0b3115a6c5a51ec62d8cbe6e834e79fe4bf22555e095a163e0e451a6fdc4d5"
+      );
+    });
+  });
 });
