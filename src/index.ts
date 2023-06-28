@@ -3,7 +3,8 @@ import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory, { ECPairInterface } from "ecpair";
 import * as ecc from "tiny-secp256k1";
 import bitcore from "bitcore-lib";
-import Mnemonic from "bitcore-mnemonic";
+import * as bip39 from "bip39";
+import * as hdkey from "hdkey";
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
 
@@ -13,6 +14,7 @@ const type = "HD Key Tree";
 interface DeserializeOption {
   hdPath?: string;
   mnemonic?: string;
+  xpriv?: string;
   activeIndexes?: number[];
   passphrase?: string;
 }
@@ -22,12 +24,13 @@ export class HdKeyring extends SimpleKeyring {
 
   type = type;
   mnemonic: string = null;
+  xpriv: string = null;
   passphrase: string;
   network: bitcoin.Network = bitcoin.networks.bitcoin;
 
   hdPath = hdPathString;
   root: bitcore.HDPrivateKey = null;
-  hdWallet?: Mnemonic;
+  hdWallet?: any;
   wallets: ECPairInterface[] = [];
   private _index2wallet: Record<number, [string, ECPairInterface]> = {};
   activeIndexes: number[] = [];
@@ -43,6 +46,7 @@ export class HdKeyring extends SimpleKeyring {
   async serialize(): Promise<DeserializeOption> {
     return {
       mnemonic: this.mnemonic,
+      xpriv: this.xpriv,
       activeIndexes: this.activeIndexes,
       hdPath: this.hdPath,
       passphrase: this.passphrase,
@@ -58,7 +62,9 @@ export class HdKeyring extends SimpleKeyring {
     let opts = _opts as DeserializeOption;
     this.wallets = [];
     this.mnemonic = null;
+    this.xpriv = null;
     this.root = null;
+
     this.hdPath = opts.hdPath || hdPathString;
 
     if (opts.passphrase) {
@@ -67,11 +73,27 @@ export class HdKeyring extends SimpleKeyring {
 
     if (opts.mnemonic) {
       this.initFromMnemonic(opts.mnemonic);
+    }else if (opts.xpriv){
+      this.initFromXpriv(opts.xpriv);
     }
 
     if (opts.activeIndexes) {
       this.activeAccounts(opts.activeIndexes);
     }
+  }
+
+  initFromXpriv(xpriv: string) {
+    if (this.root) {
+      throw new Error(
+        "Btc-Hd-Keyring: Secret recovery phrase already provided"
+      );
+    }
+
+    this.xpriv = xpriv;
+    this._index2wallet = {};
+
+    this.hdWallet =  hdkey.fromJSON({ xpriv });
+    this.root = this.hdWallet;
   }
 
   initFromMnemonic(mnemonic: string) {
@@ -84,24 +106,21 @@ export class HdKeyring extends SimpleKeyring {
     this.mnemonic = mnemonic;
     this._index2wallet = {};
 
-    this.hdWallet = new Mnemonic(mnemonic);
-    this.root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
-      )
-      .deriveChild(this.hdPath);
+    const seed = bip39.mnemonicToSeedSync(mnemonic, this.passphrase);
+    this.hdWallet = hdkey.fromMasterSeed(seed);
+    this.root = this.hdWallet.derive(this.hdPath);
   }
 
   changeHdPath(hdPath: string) {
+    if (!this.mnemonic) {
+      throw new Error(
+        "Btc-Hd-Keyring: Not support"
+      );
+    }
+    
     this.hdPath = hdPath;
 
-    this.root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
-      )
-      .deriveChild(this.hdPath);
+    this.root = this.hdWallet.derive(this.hdPath);
 
     const indexes = this.activeIndexes;
     this._index2wallet = {};
@@ -111,23 +130,19 @@ export class HdKeyring extends SimpleKeyring {
   }
 
   getAccountByHdPath(hdPath: string, index: number) {
-    const root = this.hdWallet
-      .toHDPrivateKey(
-        this.passphrase,
-        this.network == bitcoin.networks.bitcoin ? "livenet" : "testnet"
-      )
-      .deriveChild(hdPath);
+    if (!this.mnemonic) {
+      throw new Error(
+        "Btc-Hd-Keyring: Not support"
+      );
+    }
+    const root = this.hdWallet.derive(hdPath);
     const child = root!.deriveChild(index);
-    const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
+    const ecpair = ECPair.fromPrivateKey(child.privateKey);
     const address = ecpair.publicKey.toString("hex");
     return address;
   }
 
   addAccounts(numberOfAccounts = 1) {
-    if (!this.root) {
-      this.initFromMnemonic(new Mnemonic().toString());
-    }
-
     let count = numberOfAccounts;
     let currentIdx = 0;
     const newWallets: ECPairInterface[] = [];
@@ -232,7 +247,7 @@ export class HdKeyring extends SimpleKeyring {
   private _addressFromIndex(i: number): [string, ECPairInterface] {
     if (!this._index2wallet[i]) {
       const child = this.root!.deriveChild(i);
-      const ecpair = ECPair.fromPrivateKey(child.privateKey.toBuffer());
+      const ecpair = ECPair.fromPrivateKey(child.privateKey);
       const address = ecpair.publicKey.toString("hex");
       this._index2wallet[i] = [address, ecpair];
     }

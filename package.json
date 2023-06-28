@@ -1,6 +1,6 @@
 {
   "name": "@unisat/bitcoin-hd-keyring",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "A simple standard interface for a seed phrase generated set of bitcoin accounts.",
   "keywords": [
     "bitcoin",
@@ -33,8 +33,9 @@
   },
   "dependencies": {
     "@unisat/bitcoin-simple-keyring": "^0.1.8",
+    "bip39": "^3.1.0",
     "bitcore-lib": "^10.0.0",
-    "bitcore-mnemonic": "^10.0.0"
+    "hdkey": "^2.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
