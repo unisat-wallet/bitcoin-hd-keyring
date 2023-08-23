@@ -32,7 +32,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@unisat/bitcoin-simple-keyring": "^0.1.8",
+    "@unisat/bitcoin-simple-keyring": "^0.2.0",
     "bip39": "^3.1.0",
     "bitcore-lib": "^10.0.0",
     "hdkey": "^2.1.0"

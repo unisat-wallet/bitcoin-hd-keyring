@@ -1,7 +1,7 @@
 import { SimpleKeyring } from "@unisat/bitcoin-simple-keyring";
 import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory, { ECPairInterface } from "ecpair";
-import * as ecc from "tiny-secp256k1";
+import ecc from "@bitcoinerlab/secp256k1";
 import bitcore from "bitcore-lib";
 import * as bip39 from "bip39";
 import * as hdkey from "hdkey";
@@ -73,7 +73,7 @@ export class HdKeyring extends SimpleKeyring {
 
     if (opts.mnemonic) {
       this.initFromMnemonic(opts.mnemonic);
-    }else if (opts.xpriv){
+    } else if (opts.xpriv) {
       this.initFromXpriv(opts.xpriv);
     }
 
@@ -92,7 +92,7 @@ export class HdKeyring extends SimpleKeyring {
     this.xpriv = xpriv;
     this._index2wallet = {};
 
-    this.hdWallet =  hdkey.fromJSON({ xpriv });
+    this.hdWallet = hdkey.fromJSON({ xpriv });
     this.root = this.hdWallet;
   }
 
@@ -113,11 +113,9 @@ export class HdKeyring extends SimpleKeyring {
 
   changeHdPath(hdPath: string) {
     if (!this.mnemonic) {
-      throw new Error(
-        "Btc-Hd-Keyring: Not support"
-      );
+      throw new Error("Btc-Hd-Keyring: Not support");
     }
-    
+
     this.hdPath = hdPath;
 
     this.root = this.hdWallet.derive(this.hdPath);
@@ -131,9 +129,7 @@ export class HdKeyring extends SimpleKeyring {
 
   getAccountByHdPath(hdPath: string, index: number) {
     if (!this.mnemonic) {
-      throw new Error(
-        "Btc-Hd-Keyring: Not support"
-      );
+      throw new Error("Btc-Hd-Keyring: Not support");
     }
     const root = this.hdWallet.derive(hdPath);
     const child = root!.deriveChild(index);
