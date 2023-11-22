@@ -1,6 +1,6 @@
 {
   "name": "@unisat/bitcoin-hd-keyring",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A simple standard interface for a seed phrase generated set of bitcoin accounts.",
   "keywords": [
     "bitcoin",
